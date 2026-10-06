@@ -70,6 +70,21 @@ class TodoAppTestCase(unittest.TestCase):
         pos_first = response.data.find(b'first-item')
         self.assertTrue(pos_second < pos_first)
 
+
+    def test_toggle_existing_id(self):
+        self.app.post('/add', data={'title': 'Toggle Task'})
+        response = self.app.post('/toggle/1', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        
+        # Check if toggled (from False to True)
+        response = self.app.get('/')
+        self.assertIn(b'class="completed"', response.data)
+
+    def test_toggle_nonexistent_id(self):
+        response = self.app.post('/toggle/999', follow_redirects=False)
+        self.assertEqual(response.status_code, 404)
+
+
 def run_tests():
     suite = unittest.TestLoader().loadTestsFromTestCase(TodoAppTestCase)
     result = unittest.TextTestRunner(verbosity=1).run(suite)

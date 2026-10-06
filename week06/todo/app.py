@@ -48,6 +48,18 @@ def add():
         conn.commit()
     return redirect(url_for('index'))
 
+@app.route('/toggle/<int:todo_id>', methods=['POST'])
+def toggle(todo_id):
+    with closing(get_db_connection()) as conn:
+        todo = conn.execute('SELECT id, completed FROM todos WHERE id = ?', (todo_id,)).fetchone()
+        if todo:
+            new_completed = not todo['completed']
+            conn.execute('UPDATE todos SET completed = ? WHERE id = ?', (new_completed, todo_id))
+            conn.commit()
+            return redirect(url_for('index'))
+        else:
+            return 'Not Found', 404
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
