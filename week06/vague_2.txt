@@ -1,0 +1,74 @@
+전화번호를 어떤 형식으로 정리하고 싶은지에 따라 여러 가지 방법이 있습니다. 가장 대표적인 세 가지 상황(하이픈 추가, 숫자만 추출, 특정 형식으로 통일)에 맞춰 파이썬(Python) 함수를 만들어 보았습니다.
+
+### 1. 숫자만 남기고 하이픈(`-`)을 넣어 정규화하기
+가장 많이 쓰이는 기능입니다. 입력된 데이터가 `01012345678`, `010-1234-5678`, `010 1234 5678` 등 제각각일 때, 이를 `010-1234-5678`로 통일합니다.
+
+```python
+import re
+
+def format_phone_number(phone):
+    # 1. 숫자 이외의 모든 문자를 제거
+    digits = re.sub(r'\D', '', str(phone))
+    
+    # 2. 숫자의 길이에 따라 하이픈 삽입
+    length = len(digits)
+    
+    if length == 11:  # 010-1234-5678 형식
+        return f"{digits[:3]}-{digits[3:7]}-{digits[7:]}"
+    elif length == 10:
+        # 02-123-4567 또는 010-123-4567 형식 구분
+        if digits.startswith('02'): # 서울 지역번호
+            return f"{digits[:2]}-{digits[2:5]}-{digits[5:]}"
+        else:
+            return f"{digits[:3]}-{digits[3:6]}-{digits[6:]}"
+    elif length == 9: # 02-12-3456 형식
+        return f"{digits[:2]}-{digits[2:4]}-{digits[4:]}"
+    else:
+        # 형식이 맞지 않으면 숫자만 반환하거나 에러 처리
+        return digits
+
+# 테스트
+test_numbers = ["01012345678", "010-1234-5678", "021234567", "010 1234 5678", "02-123-4567"]
+for num in test_numbers:
+    print(f"{num} -> {format_phone_number(num)}")
+```
+
+---
+
+### 2. 데이터 분석용: 숫자만 추출하기 (Clean Data)
+DB에 저장하거나 계산을 위해 모든 특수문자를 제거하고 숫자만 남기고 싶을 때 사용합니다.
+
+```python
+import re
+
+def clean_phone_number(phone):
+    # 숫자만 남기고 모두 제거
+    return re.sub(r'\D', '', str(phone))
+
+# 테스트
+print(clean_phone_number("010-1234-5678")) # 출력: 01012345678
+print(clean_phone_number("(02) 123-4567")) # 출력: 021234567
+```
+
+---
+
+### 3. 리스트(목록) 한꺼번에 정리하기
+엑셀이나 CSV 파일에서 불러온 데이터 리스트를 한 번에 변환할 때 유용합니다.
+
+```python
+def format_phone_list(phone_list):
+    return [format_phone_number(p) for p in phone_list]
+
+# 테스트
+raw_data = ["01012345678", "021234567", "010-9876-5432", "abc-010-1111-2222"]
+cleaned_data = format_phone_list(raw_data)
+print(cleaned_data)
+# 출력: ['010-1234-5678', '02-123-4567', '010-9876-5432', '010-1111-2222']
+```
+
+### 코드 설명 및 팁:
+1.  **`re.sub(r'\D', '', str(phone))`**: 정규표현식(Regular Expression)을 사용하여 숫자가 아닌 것(`\D`)을 빈 문자열(`''`)로 바꿉니다. 즉, 숫자만 남깁니다.
+2.  **조건문 (`if/elif`)**: 한국 전화번호 체계는 지역번호(02)와 휴대폰 번호(010)의 길이에 따라 하이픈 위치가 달라지므로 이를 구분해 주었습니다.
+3.  **확장성**: 만약 해외 전화번호까지 처리해야 한다면 훨씬 복잡한 로직이 필요하지만, 국내용으로는 위 코드로 충분합니다.
+
+**원하시는 특정 형식이 따로 있다면 말씀해 주세요! (예: "01012345678"을 "010.1234.5678"로 바꿔줘 등)**

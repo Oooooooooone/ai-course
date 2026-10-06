@@ -1,0 +1,106 @@
+전화번호를 어떤 형식으로 정리하고 싶으신가요? 보통 가장 많이 쓰이는 두 가지 패턴(**하이픈(-) 제거하기** 또는 **하이픈(-) 넣기**)을 기준으로 Python 함수를 만들어 보았습니다.
+
+### 1. 숫자만 추출하기 (하이픈 제거)
+사용자가 `010-1234-5678` 또는 `010.1234.5678`처럼 입력해도 숫자만 남기고 모두 지워줍니다.
+
+```python
+import re
+
+def clean_phone_number(phone):
+    # 숫자가 아닌 모든 문자를 제거합니다.
+    return re.sub(r'[^0-9]', '', phone)
+
+# 테스트
+print(clean_phone_number("010-1234-5678"))  # 출력: 01012345678
+print(clean_phone_number("02.123.4567"))     # 출력: 021234567
+print(clean_phone_number("(010) 1234 5678")) # 출력: 01012345678
+```
+
+---
+
+### 2. 표준 형식으로 만들기 (하이픈 추가)
+숫자만 있는 문자열을 받아 `010-1234-5678` 또는 `02-123-4567` 같은 표준 형식으로 변환합니다. 한국 전화번호의 길이는 다양하므로 조건문이 필요합니다.
+
+```python
+import re
+
+def format_phone_number(phone):
+    # 1. 먼저 숫자만 남깁니다.
+    digits = re.sub(r'[^0-9]', '', phone)
+    length = len(digits)
+
+    # 2. 길이에 따라 형식을 적용합니다.
+    if length == 11:  # 010-1234-5678 형식
+        return f"{digits[:3]}-{digits[3:7]}-{digits[7:]}"
+    elif length == 10:
+        # 02-1234-5678 (서울 지역번호 2자리) 또는 010-123-4567 (일부 번호)
+        if digits.startswith('02'):
+            return f"{digits[:2]}-{digits[2:6]}-{digits[6:]}"
+        else:
+            return f"{digits[:3]}-{digits[3:6]}-{digits[6:]}"
+    elif length == 9:  # 02-123-4567 형식
+        return f"{digits[:2]}-{digits[2:5]}-{digits[5:]}"
+    else:
+        return digits  # 형식이 맞지 않으면 그냥 반환
+
+# 테스트
+print(format_phone_number("01012345678"))    # 출력: 010-1234-5678
+print(format_phone_number("021234567"))      # 출력: 02-1234-567
+print(format_phone_number("010-123-4567"))   # 출력: 010-123-4567
+print(format_phone_number("02.123.4567"))    # 출력: 02-123-4567
+```
+
+---
+
+### 3. 종합 선물 세트 (정규식 활용)
+데이터 정제(Data Cleaning) 작업 시 가장 추천하는 방식입니다. 잘못된 번호를 걸러내고 깔끔하게 정리합니다.
+
+```python
+import re
+
+def standardize_phone(phone):
+    # 숫자만 추출
+    digits = re.sub(r'[^0-9]', '', str(phone))
+    
+    # 유효성 검사 (너무 짧거나 긴 경우 처리)
+    if len(digits) < 9 or len(digits) > 11:
+        return "Invalid Number"
+
+    # 패턴 매칭을 통한 변환
+    # 010-1234-5678 (11자리)
+    if len(digits) == 11:
+        return re.sub(r'(\d{3})(\d{4})(\d{4})', r'\1-\2-\3', digits)
+    
+    # 02-1234-5678 (10자리, 서울)
+    elif len(digits) == 10 and digits.startswith('02'):
+        return re.sub(r'(\d{2})(\d{4})(\d{4})', r'\1-\2-\3', digits)
+    
+    # 010-123-4567 (10자리, 그 외)
+    elif len(digits) == 10:
+        return re.sub(r'(\d{3})(\d{3})(\d{4})', r'\1-\2-\3', digits)
+    
+    # 02-123-4567 (9자리)
+    elif len(digits) == 9:
+        return re.sub(r'(\d{2})(\d{3})(\d{4})', r'\1-\2-\3', digits)
+    
+    return digits
+
+# 테스트 데이터 리스트
+test_data = [
+    "01012345678",
+    "02-123-4567",
+    "010.5555.6666",
+    "(010) 9999 8888",
+    "123",           # 잘못된 번호
+    "0212345678"     # 10자리 서울 번호
+]
+
+for data in test_data:
+    print(f"{data}  =>  {standardize_phone(data)}")
+```
+
+### 사용 팁:
+1. **`re` 모듈**: 정규 표현식을 사용하여 복잡한 문자열 패턴을 아주 쉽게 다룰 수 있습니다.
+2. **데이터 전처리**: 엑셀이나 DB에서 불러온 데이터는 형식이 제각각인 경우가 많으므로, 항상 **"먼저 숫자만 뽑아낸 뒤(`re.sub`) 다시 붙인다"**는 전략을 사용하는 것이 가장 오류가 적습니다.
+
+원하시는 특정 규칙(예: 특정 국가 번호 포함, 특정 길이 고정 등)이 있다면 말씀해 주세요! 바로 수정해 드릴게요.

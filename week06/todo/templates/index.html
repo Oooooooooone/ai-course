@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Todo List</h1>
+
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+
+    <form action="/add" method="POST">
+        <input type="text" name="title" placeholder="Enter a new task..." required>
+        <button type="submit">Add</button>
+    </form>
+
+    <ul>
+        {% for todo in todos %}
+        <li class="{{ 'completed' if todo.completed else '' }}">
+            <div class="todo-info">
+                <span class="todo-title">{{ todo.title }}</span>
+                <span class="todo-time">{{ todo.created_at }}</span>
+            </div>
+            <div class="actions">
+                <form action="/toggle/{{ todo.id }}" method="POST" style="display:inline; margin:0;">
+                    <button type="submit">{{ 'Undo' if todo.completed else 'Done' }}</button>
+                </form>
+                <form action="/delete/{{ todo.id }}" method="POST" style="display:inline; margin:0;">
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
