@@ -16,6 +16,16 @@ def main(page: ft.Page):
 
     fees = []
 
+    def on_delete(e):
+        index = e.control.data
+        items_list.controls.pop(index)
+        fees.pop(index)
+        for i, control in enumerate(items_list.controls):
+            control.controls[1].data = i
+        total_sum = logic.calculate_total(fees)
+        total_text.value = f"오늘 합계: {logic.format_currency(total_sum)}원"
+        page.update()
+
     def on_calculate(e):
         res, err = logic.process_calculation(start_input.value, end_input.value)
         if err:
@@ -24,7 +34,14 @@ def main(page: ft.Page):
             notice_text.value = ""
             fees.append(res["fee"])
             item_str = f"{res['start']} → {res['end']} | {res['duration']}분 | {logic.format_currency(res['fee'])}원"
-            items_list.controls.append(ft.Text(value=item_str))
+            items_list.controls.append(
+                ft.Row(
+                    controls=[
+                        ft.Text(value=item_str, expand=True),
+                        ft.Button(content="삭제", data=len(fees) - 1, on_click=on_delete),
+                    ]
+                )
+            )
             total_sum = logic.calculate_total(fees)
             total_text.value = f"오늘 합계: {logic.format_currency(total_sum)}원"
         page.update()
